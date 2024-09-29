@@ -98,4 +98,133 @@ int main() {
  
     return 0;
 }
-×
+\\c方式
+#include <iostream>
+#include <cstring>
+ 
+using namespace std;
+ 
+struct student {
+    char id[100];
+    char name[100];
+};
+ 
+student* create_students(int& n) {
+    cin >> n;
+ 
+    // 输入验证
+    if (n <= 0) {
+        cerr << "Invalid number of students. Exiting." << endl;
+        return nullptr;
+    }
+ 
+    student* result = new student[n];
+ 
+    for (int i = 0; i < n; i++) {
+        cin >> result[i].id >> result[i].name;
+ 
+        // 输入验证
+        if (strlen(result[i].id) == 0 || strlen(result[i].name) == 0) {
+            cerr << "Invalid input. Skipping this student." << endl;
+            i--;
+        }
+    }
+ 
+    return result;
+}
+ 
+int insert_student(student*& students, int& n, int position, const char* id, const char* name) {
+    if (position < 1 || position > n + 1) {
+        return -1;
+    }
+ 
+    student* new_students = new student[n + 1];
+ 
+    for (int i = 0; i < position - 1; i++) {
+        new_students[i] = students[i];
+    }
+ 
+    strcpy(new_students[position - 1].id, id);
+    strcpy(new_students[position - 1].name, name);
+ 
+    for (int i = position - 1; i < n; i++) {
+        new_students[i + 1] = students[i];
+    }
+ 
+    delete[] students;
+    students = new_students;
+    n++;
+ 
+    return 0;
+}
+ 
+int remove_student(student*& students, int& n, int position) {
+    if (position < 1 || position > n) {
+        return -1;
+    }
+ 
+    student* new_students = new student[n - 1];
+ 
+    for (int i = 0; i < position - 1; i++) {
+        new_students[i] = students[i];
+    }
+ 
+    for (int i = position; i < n; i++) {
+        new_students[i - 1] = students[i];
+    }
+ 
+    delete[] students;
+    students = new_students;
+    n--;
+ 
+    return 0;
+}
+ 
+void find_student(const student* students, int n, const string& type, const string& search_key) {
+    for (int i = 0; i < n; i++) {
+        if ((type == "name" && strcmp(students[i].name, search_key.c_str()) == 0) ||
+            (type == "no" && strcmp(students[i].id, search_key.c_str()) == 0)) {
+            cout << i + 1 << " " << students[i].id << " " << students[i].name << endl;
+            return;
+        }
+    }
+    cout << "-1" << endl;
+}
+ 
+int main() {
+    int n = 0;
+    student* students = create_students(n);
+ 
+    if (students == nullptr) {
+        return 1;
+    }
+ 
+    int loop = 1;
+    while (loop) {
+        string operation;
+        cin >> operation;
+        if (operation == "end") {
+            cout << n << endl;
+            loop = 0;
+        }
+        else if (operation == "insert") {
+            int position;
+            char id[100], name[100];
+            cin >> position >> id >> name;
+            cout << insert_student(students, n, position, id, name) << endl;
+        }
+        else if (operation == "remove") {
+            int position;
+            cin >> position;
+            cout << remove_student(students, n, position) << endl;
+        }
+        else if (operation == "check") {
+            string type, search_key;
+            cin >> type >> search_key;
+            find_student(students, n, type, search_key);
+        }
+    }
+ 
+    delete[] students;
+    return 0;
+}
