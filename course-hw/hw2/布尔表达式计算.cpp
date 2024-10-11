@@ -1,7 +1,6 @@
 #include <iostream>
 #include <string>
 #include <stack>
-#include <stdexcept>
 
 using namespace std;
 
