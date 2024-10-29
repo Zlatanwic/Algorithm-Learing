@@ -1,0 +1,591 @@
+\documentclass[12pt]{article}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{amsmath}
+\usepackage{minted}% 语法高亮和代码样式设置方面更加强大和灵活
+\usepackage{epstopdf}
+\usepackage{algorithm}
+\usepackage{ctex}
+\usepackage[all,pdf]{xy}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins}
+\tcbuselibrary{minted}
+\usemintedstyle{paraiso-dark}
+\usepackage{graphicx}
+\usepackage{geometry}
+\title{作业 HW2* 实验报告}
+\author{2353113 李阔}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\section{涉及数据结构和相关背景}
+{\songti 本次作业涉及到的数据结构是栈和队列，而这有相似之处，但是也有不同，队列是先进先出，栈是先进后出，其他共同点与区别在后文中有详细描述。}
+\section{实验内容}
+\subsection{火车进站}
+\subsubsection{问题描述}
+{\songti 每一时刻，列车可以从入口进车站或直接从入口进入出口，再或者从车站进入出口。即每一时刻可以有一辆车沿着箭头a或b或c的方向行驶。 现在有一些车在入口处等待，给出该序列，然后给你多组出站序列，请你判断是否能够通过上述的方式从出口出来。 }
+\subsubsection{基本要求}
+
+\begin{description}
+    \item[输入] 第1行，一个串，入站序列。
+后面多行，每行一个串，表示出栈序列
+当输入=EOF时结束
+    \item[输出] 多行，若给定的出栈序列可以得到，输出yes,否则输出no。
+\end{description}
+\subsubsection{数据结构设计}
+{\songti 经过分析发现这道题是一道考察栈的题，进入火车站相当于入栈，走出火车站相当于出栈，而直接从入口到出口相当于先进栈，而因为元素本来就在栈顶，所以可以立即出栈。所以我就用栈来模拟火车进站的过程。}
+\begin{tcblisting}{listing engine=minted,boxrule=0.1mm,
+colback=blue!5!white,colframe=blue!75!black,
+listing only,left=5mm,enhanced,sharp corners=all,
+overlay={\begin{tcbclipinterior}\fill[red!20!blue!20!white] (frame.south west)
+rectangle ([xshift=5mm]frame.north west);\end{tcbclipinterior}},
+minted language=c++,
+minted style=tango,
+minted options={fontsize=\small,breaklines,autogobble,linenos,numbersep=3mm}}
+const int N = 100010;
+
+struct mystack {
+    char a[N];
+    int t = 0;  //表示栈顶
+    void push(char x) { a[++t] = x; }  //入栈函数
+    char top() { return a[t]; }  //返回栈顶元素的值
+    void pop() { t--; }   //出栈
+    int empty() { return t == 0 ? 1 : 0; }  //查询是否为空
+    void clear() { t = 0; }   //清空栈
+} st;
+\end{tcblisting}
+
+\subsubsection{功能函数}
+{\songti 以下为本题核心代码，由于题目较简单所以没有设置其他函数，关键部分都在主函数。}
+
+\begin{tcblisting}{listing engine=minted,boxrule=0.1mm,
+colback=blue!5!white,colframe=blue!75!black,
+listing only,left=5mm,enhanced,sharp corners=all,
+overlay={\begin{tcbclipinterior}\fill[red!20!blue!20!white] (frame.south west)
+rectangle ([xshift=5mm]frame.north west);\end{tcbclipinterior}},
+minted language=c++,
+minted style=tango,
+minted options={fontsize=\small,breaklines,autogobble,linenos,numbersep=3mm}}
+while (getline(cin, output)) { //表示读取出栈序列
+        if (output.empty()) break; // 结束输入判断
+        st.clear(); // 清空栈
+        int count = 0;
+        int j = 0;
+        for (int i = 0; i < len; i++) {
+            st.push(input[i]);
+            while (!st.empty() && st.top() == output[j]) { //如果此时栈顶元素恰为出栈序列当前元素则出栈
+                j++;
+                st.pop();
+                count++;  //计数
+            }
+        }
+        if (count == len) 
+            printf("yes\n");
+        else
+            printf("no\n");
+    }
+\end{tcblisting}
+\subsubsection{调试分析}
+{\songti 一开始没有在栈的数据结构里面添加清空栈的函数，导致main函数运行时如果前一次操作的栈没有清空会有元素残留，导致接下来的操作可能出问题。之后添加一个clear函数后，问题就解决了。}
+\subsubsection{总结与体会}
+{\songti 像是栈这种有比较明显特征的数据结构是比较容易识别出来，这样那么用栈去模拟操作就好了，而手写栈相对于其他数据结构来说还算比较简单。}
+\subsection{最长子串}
+\subsubsection{问题描述}
+{\songti 已知一个长度为n，仅含有字符'('和')'的字符串，请计算出最长的正确的括号子串的长度及起始位置，若存在多个，取第一个的起始位置。\\
+子串是指任意长度的连续的字符序列。\\
+例1：对字符串 "(()()))()"来说，最长的子串是"(()())"，所以长度=6，起始位置是0。\\
+例2：对字符串")())"来说，最长的子串是"()",子串长度=2，起始位置是1。\\
+例3；对字符串""来说，最长的子串是"",子串长度=0，空串的起始位置规定输出0。\\
+字符串长度：0≤n≤1*105\\
+对于20\%的数据：0<=n<=20\\
+对于40\%的数据：0<=n<=100\\
+对于60\%的数据：0<=n<=10000\\
+对于100\%的数据：0<=n<=100000\\
+提示：查找正确的括号子串可以用栈来实现，注意会有非法的右括号，比如例2中的第一个右括号。}
+\subsubsection{基本要求}
+\begin{description}
+    \item[输入] 一行字符串
+    \item[输出] 子串长度，及起始位置
+    \item[样例输入] (()())
+    \item[样例输出] 6 0
+\end{description}
+\subsubsection{数据结构设计}
+{\songti 括号匹配是经典的栈的应用，所以就毫不犹豫地选择的栈的数据结构。}
+\begin{tcblisting}{listing engine=minted,boxrule=0.1mm,
+colback=blue!5!white,colframe=blue!75!black,
+listing only,left=5mm,enhanced,sharp corners=all,
+overlay={\begin{tcbclipinterior}\fill[red!20!blue!20!white] (frame.south west)
+rectangle ([xshift=5mm]frame.north west);\end{tcbclipinterior}},
+minted language=c++,
+minted style=tango,
+minted options={fontsize=\small,breaklines,autogobble,linenos,numbersep=3mm}}
+const int N = 100010;
+
+struct mystack { //和上题类似，只是元素的数据类型换成int
+    int a[N];
+    int t = 0;
+    void push(int x) { a[++t] = x; }
+    int top() { return a[t]; }
+    void pop() { t--; }
+    int empty() { return t == 0 ? 1 : 0; }
+    void clear() { t = 0; }
+} st;
+\end{tcblisting}
+\subsubsection{功能函数}
+{\songti 以下是本题关键代码，同样由于题目不是特别复杂，无需其他函数，只选取主函数的一个循环，包含了计算最长字串长度，以及起始位置的功能。}
+\begin{tcblisting}{listing engine=minted,boxrule=0.1mm,
+colback=blue!5!white,colframe=blue!75!black,
+listing only,left=5mm,enhanced,sharp corners=all,
+overlay={\begin{tcbclipinterior}\fill[red!20!blue!20!white] (frame.south west)
+rectangle ([xshift=5mm]frame.north west);\end{tcbclipinterior}},
+minted language=c++,
+minted style=tango,
+minted options={fontsize=\small,breaklines,autogobble,linenos,numbersep=3mm}}
+for (int i = 0; i < len; i++) {
+        if (str[i] == '(') {  //str是读入的括号字符串
+            st.push(i);  //左括号的序号直接进栈
+        } else {
+            if (!st.empty() && str[st.top()] == '(') {
+                st.pop();
+                int current_length = 0;
+                if (st.empty()) { //每次括号匹配成功，计算一次当前长度
+                    current_length = i + 1; //空栈即为当前序号+1
+                } else {
+                    current_length = i - st.top(); //否则为当前序号（也就是右括号序号）减去栈顶序号（与之匹配的左括号序号）
+                }
+                if (current_length > max_length) {
+                    max_length = current_length;  //按最大值更新
+                    start_index = st.empty() ? 0 : st.top() + 1; //空栈则起始在0，非空则第一个左括号的序号+1，因为还要算一个0
+                }
+            } else {
+                st.push(i);
+            }
+        }
+    }
+\end{tcblisting}
+\subsubsection{调试分析}
+\begin{itemize}
+    \item 没有处理有多余右括号的情况，然后在判断出当前字符是右括号的情况下，判断是否非空，非空则正常进行括号匹配，为空则直接进栈。
+    \item 计算起始位置以及字串长度时，由于开头的0，细节有点小错误，后来调试几次就好了。
+\end{itemize}
+
+\subsubsection{总结与体会}
+\begin{description}
+    \item[映射] 形成了一个比较经典的映射，A代表输入的括号字符，B代表对应的位置序号，即有$\xymatrix@1{A\ar[r]^{f}&B}$ ，因为只有两种字符，所以用字符出现的序号来与括号一一对应，通过序号可以定位对应的括号。
+    \item[动态规划思想] 虽然代码没有显式地使用动态规划，但其思想与动态规划类似，通过记录和更新状态来解决问题。每次遇到右括号时，都会计算当前有效子串的长度，并更新最长有效子串的长度和起始位置。
+    \item[复杂度分析] 代码时间复杂度为O(n)，因为只需要对输入字符串遍历一次
+\end{description}
+\subsection{布尔表达式}
+\subsubsection{问题描述}
+{\songti 计算如下布尔表达式 ( V | V ) \& F \& ( F | V ) 其中V表示True，F表示False，|表示or，\&表示and，！表示not（运算符优先级not> and > or）。}
+\subsubsection{基本要求}
+\begin{description}
+    \item[输入] 文件输入，有若干（A<=20）个表达式，其中每一行为一个表达式。 表达式有（N<=100）个符号，符号间可以用任意空格分开，或者没有空格，所以表达式的总长度，即字符的个数，是未知的。\\
+对于20\%的数据，有A<=5，N<=20，且表达式中包含V、F、\&、|\\
+对于40\%的数据，有A<=10，N<=50，且表达式中包含V、F、\&、|、!\\
+对于100\%的数据，有A<=20，N<=100，且表达式中包含V、F、\&、|、!、(、)\\
+\textit{所有测试数据中都可能穿插空格} 
+    \item[输出] 对测试用例中的每个表达式输出“Expression”，后面跟着序列号和“: ”，然后是相应的测试表达式的结果（V或F），每个表达式结果占一行（注意冒号后面有空格）。
+\end{description}
+\begin{center}
+\begin{tabular}{|c|c|}
+    \hline
+   样例输入  & 样例输出 \\  \hline
+   (V|V)\&F\&(F|V)  &  Expression 1: F\\  \hline
+   !V|V\&V\&!F\&(F|V)\&(!F|F|!V\&V)  &   Expression 2: V \\  \hline
+   (F\&F|V|!V\&!F\&!(F|F\&V))   &   Expression 3: V \\ \hline
+\end{tabular}
+\end{center}
+\subsubsection{数据结构设计}
+
+\begin{tcblisting}{listing engine=minted,boxrule=0.1mm,
+colback=blue!5!white,colframe=blue!75!black,
+listing only,left=5mm,enhanced,sharp corners=all,
+overlay={\begin{tcbclipinterior}\fill[red!20!blue!20!white] (frame.south west)
+rectangle ([xshift=5mm]frame.north west);\end{tcbclipinterior}},
+minted language=c++,
+minted style=tango,
+minted options={fontsize=\small,breaklines,autogobble,linenos,numbersep=3mm}}
+const int N = 200;
+struct mycharstack {
+    char a[N];
+    int t = 0;  //表示栈顶
+    void push(char x) { a[++t] = x; }  //入栈函数
+    char top() { return a[t]; }  //返回栈顶元素的值
+    void pop() { t--; }   //出栈
+    int empty() { return t == 0 ? 1 : 0; }  //查询是否为空
+    void clear() { t = 0; }   //清空栈
+} ops;
+struct myboolstack {
+    bool a[N];
+    int t = 0;  //表示栈顶
+    void push(bool x) { a[++t] = x; }  //入栈函数
+    bool top() { return a[t]; }  //返回栈顶元素的值
+    void pop() { t--; }   //出栈
+    int empty() { return t == 0 ? 1 : 0; }  //查询是否为空
+    void clear() { t = 0; }   //清空栈
+} ops;
+\end{tcblisting}
+{\songti 计算逻辑表达式以及布尔表达式都是栈的经典应用，而计算逻辑表达式的经典做法就是建立两个栈，一个储存数据元素（本题为V或F），一个储存逻辑符号\\
+读到运算符，如果优先级比运算符栈顶低，则直接与数据栈计算，结果直接进数据栈，如果优先级比运算符栈栈顶高，则该运算符入栈，以此类推，最终求出布尔表达式的值。}
+\subsubsection{功能函数}
+\begin{tcblisting}{listing engine=minted,boxrule=0.1mm,
+colback=blue!5!white,colframe=blue!75!black,
+listing only,left=5mm,enhanced,sharp corners=all,
+overlay={\begin{tcbclipinterior}\fill[red!20!blue!20!white] (frame.south west)
+rectangle ([xshift=5mm]frame.north west);\end{tcbclipinterior}},
+minted language=c++,
+minted style=tango,
+minted options={fontsize=\small,breaklines,autogobble,linenos,numbersep=3mm}}
+// 定义操作符的优先级
+int precedence(char op) {
+    switch (op) {
+        case '!': return 3; //数越大，优先级越高
+        case '&': return 2;
+        case '|': return 1;
+        default: return 0;
+    }
+}     // 计算两个布尔值的结果
+bool applyOp(bool a, bool b, char op) { 
+    switch (op) {
+        case '&': return a && b;
+        case '|': return a || b;
+    }
+}      // 检查括号是否匹配
+bool areBracketsBalanced(const string& expr) { 
+    int count = 0;
+    for (char c : expr) {
+        if (c == '(') count++;
+        if (c == ')') count--;
+        if (count < 0) return false;
+    }
+    return count == 0;
+}
+\end{tcblisting}
+\begin{tcblisting}{listing engine=minted,boxrule=0.1mm,
+colback=blue!5!white,colframe=blue!75!black,
+listing only,left=5mm,enhanced,sharp corners=all,
+overlay={\begin{tcbclipinterior}\fill[red!20!blue!20!white] (frame.south west)
+rectangle ([xshift=5mm]frame.north west);\end{tcbclipinterior}},
+minted language=c++,
+minted style=tango,
+minted options={fontsize=\small,breaklines,autogobble,linenos,numbersep=3mm}}
+// 计算布尔表达式的结果
+bool evaluate(const string& expression) {
+    if (!areBracketsBalanced(expression)) { 
+        cout<<"表达式中括号数不合法"; 
+        return 0;   //如果表达式中括号适配则直接返回0
+    }
+    for (size_t i = 0; i < expression.length(); i++) {
+        char c = expression[i];
+        if (c == ' ') continue; // 忽略空格
+        if (c == '(') 
+            ops.push(c);  //左括号直接进栈
+        else if (c == ')') {  
+            while (!ops.empty() && ops.top() != '(') { //先计算括号内的
+                char op = ops.top(); 
+                ops.pop(); //取栈顶运算符，再弹出
+                if (op == '!') {   //当该运算符为去否，若数据栈非空，
+                    if (!values.empty()) {   //则取栈顶元素，先弹出，       
+                        bool val = values.top();   //取反再入栈
+                        values.pop();
+                        values.push(!val);
+                    }
+                }
+                else {  //若是双目运算符
+                    if (values.size() < 2) //首先必须符合数据栈内有至少两个元素
+                        break;
+                    bool val2 = values.top(); values.pop();
+                    bool val1 = values.top(); values.pop();
+                    values.push(applyOp(val1, val2, op)); 
+                }     //调用applyOp函数进行运算
+            }
+            if (ops.empty()) {
+                cout << "括号失配";
+                return 0;
+            }
+            ops.pop(); // 弹出左括号
+        }
+\end{tcblisting}
+\begin{tcblisting}{listing engine=minted,boxrule=0.1mm,
+colback=blue!5!white,colframe=blue!75!black,
+listing only,left=5mm,enhanced,sharp corners=all,
+overlay={\begin{tcbclipinterior}\fill[red!20!blue!20!white] (frame.south west)
+rectangle ([xshift=5mm]frame.north west);\end{tcbclipinterior}},
+minted language=c++,
+minted style=tango,
+minted options={fontsize=\small,breaklines,autogobble,linenos,numbersep=3mm}}
+        else if (c == '!') {  //直接读到取否运算符，然后处理连续！的情况
+            int notCount = 1;
+            while (i + 1 < expression.length() && expression[i + 1] == '!') {
+                notCount++;  //记录连续取否运算符的个数
+                i++;
+            }
+            if (notCount % 2 == 1)  //奇数个！则相当于一个！进栈
+                ops.push('!');     //偶数个！相当于没有！
+        }
+        else if (c == '&' || c == '|') { //真正读到双目运算符
+            while (!ops.empty() && precedence(ops.top()) >= precedence(c)) {
+                char op = ops.top();  //优先级低于栈顶运算符则开始运算
+                ops.pop();
+                if (op == '!') {  //具体运算步骤基本相同
+                    if (!values.empty()) {
+                        bool val = values.top();
+                        values.pop();
+                        values.push(!val);
+                    }
+                }
+                else {
+                    if (values.size() < 2) {
+                        cout << "非法表达式";
+                        return -1;
+                    }
+                    bool val2 = values.top(); values.pop();
+                    bool val1 = values.top(); values.pop();
+                    values.push(applyOp(val1, val2, op));
+                }
+            }
+            ops.push(c);
+        }
+        else if (c == 'V' || c == 'F') //读到V或F则直接进栈
+            values.push(c == 'V');
+    }
+\end{tcblisting}
+\begin{tcblisting}{listing engine=minted,boxrule=0.1mm,
+colback=blue!5!white,colframe=blue!75!black,
+listing only,left=5mm,enhanced,sharp corners=all,
+overlay={\begin{tcbclipinterior}\fill[red!20!blue!20!white] (frame.south west)
+rectangle ([xshift=5mm]frame.north west);\end{tcbclipinterior}},
+minted language=c++,
+minted style=tango,
+minted options={fontsize=\small,breaklines,autogobble,linenos,numbersep=3mm}}
+    while (!ops.empty()) {  //输入字符串读取完毕，开始计算栈中剩余元素
+        char op = ops.top();  //按栈内顺序直接计算
+        ops.pop();
+        if (op == '!') {
+            if (!values.empty()) {
+                bool val = values.top();
+                values.pop();
+                values.push(!val);
+            }
+        }
+        else {
+            if (values.size() < 2) {
+                cout<<"非法表达式";
+                return -1;
+            }
+            bool val2 = values.top(); values.pop();
+            bool val1 = values.top(); values.pop();
+            values.push(applyOp(val1, val2, op));
+        }
+    }
+    return values.top();
+}
+\end{tcblisting}
+\subsubsection{调试分析}
+{\songti 在刚写的时候我没有处理好连续多个取否符号的情况，先是如果出现多个连续！则会弹窗报错，经过研究是因为此时数据栈还为空，直接取数据栈栈顶会导致出错，所以我再读到！时加了只有数据栈非空再进行操作；\\
+后来不弹窗报错了，但是发现！！F会等于V，这可能是由于我忽略了一个取否符号，于是我决定读到！时要先判断！的个数，进行简化，再进行下一步操作，调整好之后就没什么问题了。}
+\subsubsection{总结与体会}
+\begin{description}
+    \item[栈的应用] 栈是一种非常适合处理表达式求值的数据结构。通过栈，可以有效地处理操作符的优先级和括号的嵌套。栈的 push 和 pop 操作使得代码能够动态地处理表达式的计算顺序。
+    \item[复杂度分析] 代码的时间复杂度为 O(n)，其中 n 是输入表达式的长度。这是因为代码只需要遍历一次表达式，并对每个字符进行常数时间的操作。
+    \item[可提升部分] 在进行具体计算式时，有多处代码的重复，可以提炼成一个函数，使代码更简洁，也提高了可读性。
+\end{description}
+\subsection{队列应用}
+\subsubsection{问题描述}
+{\songti 输入一个n*m的0 1矩阵，1表示该位置有东西，0表示该位置没有东西。所有四邻域联通的1算作一个区域，仅在矩阵边缘联通的不算作区域。求区域数。此算法在细胞计数上会经常用到。\\
+对于所有数据，0<=n,m<=1000。}
+\subsubsection{基本要求}
+\begin{enumerate}
+    \item[\textbf{输入}] 第1行2个正整数n，m, 表示要输入的矩阵行数和列数
+第2—n+1行为n*m的矩阵，每个元素的值为0或1。
+    \item[\textbf{输出}] 1行，代表区域数。
+    \begin{enumerate}
+        \item[\textbf{样例输入}] 9 9\\
+        $\begin{pmatrix}
+            0&0&0&1&1&0&0&0&0 \\
+            0&1&1&0&0&1&1&1&0 \\
+            0&1&1&0&0&1&1&1&0 \\
+            0&0&0&0&0&1&0&0&0 \\
+            0&0&0&0&0&0&0&0&0 \\
+            0&1&1&1&1&1&1&1&0 \\
+            0&0&1&0&1&0&1&0&0 \\
+            0&0&0&0&0&0&0&0&0 \\
+            0&0&0&0&0&0&0&0&0 \\
+        \end{pmatrix}$
+        \item[\textbf{输出}] 3
+    \end{enumerate}
+\end{enumerate}
+\subsubsection{数据结构设计}
+{\songti 开两个足够大的数组，一个用来储存矩阵的值，另一个用来代表矩阵该坐标是否被访问过}
+\begin{tcblisting}{listing engine=minted,boxrule=0.1mm,
+colback=blue!5!white,colframe=blue!75!black,
+listing only,left=5mm,enhanced,sharp corners=all,
+overlay={\begin{tcbclipinterior}\fill[red!20!blue!20!white] (frame.south west)
+rectangle ([xshift=5mm]frame.north west);\end{tcbclipinterior}},
+minted language=c++,
+minted style=tango,
+minted options={fontsize=\small,breaklines,autogobble,linenos,numbersep=3mm}}
+const int MAXN = 1005;
+int n, m;
+int matrix[MAXN][MAXN];
+bool visited[MAXN][MAXN];
+// 定义四个方向的偏移量，为深度优先搜索做准备
+int dx[] = { 0, 0, 1, -1 };
+int dy[] = { 1, -1, 0, 0 };
+\end{tcblisting}
+\subsubsection{功能函数}
+{\songti }
+\begin{tcblisting}{listing engine=minted,boxrule=0.1mm,
+colback=blue!5!white,colframe=blue!75!black,
+listing only,left=5mm,enhanced,sharp corners=all,
+overlay={\begin{tcbclipinterior}\fill[red!20!blue!20!white] (frame.south west)
+rectangle ([xshift=5mm]frame.north west);\end{tcbclipinterior}},
+minted language=c++,
+minted style=tango,
+minted options={fontsize=\small,breaklines,autogobble,linenos,numbersep=3mm}}
+bool isEdge(int x, int y) {  //判断当前坐标是否位于矩阵边缘
+    return x == 0 || x == n - 1 || y == 0 || y == m - 1;
+}
+//isRegion在外部预设为false
+void dfs(int x, int y, bool& isRegion) { //深度优先搜索函数
+    visited[x][y] = true; //记录该坐标已被访问
+    if (!isEdge(x, y)) { //如果连通区域内有不在边缘的元素则isRegion设为true
+        isRegion = true; 
+    }
+    for (int i = 0; i < 4; i++) { //四个方向进行遍历
+        int nx = x + dx[i];
+        int ny = y + dy[i];
+        if (nx >= 0 && nx < n && ny >= 0 && ny < m && !visited[nx][ny] && matrix[nx][ny] == 1) { 
+            dfs(nx, ny, isRegion); //满足在区域内且未被访问过且该坐标矩阵值为1则递归
+        }
+    }
+}
+\end{tcblisting}
+\subsubsection{调试分析}
+\begin{itemize}
+    \item 前几次尝试因为没理解好题目要求的四邻域联通是什么意思导致查找出错，用给的cpp文件生成测试数据才知道，单独一个1也算一个四邻域联通，还有仅当一个四邻域联通的所有元素全都位于边缘才忽略该连通区域，否则只要有一个元素不位于边缘都算作一个联通区域。\\
+    因此isResion在外部默认设为false，仅当搜索时出现一个元素不在边缘才置为true，才计数
+\end{itemize}
+\subsubsection{总结与体会}
+\begin{description}
+    \item[DFS的应用] 深度优先搜索是一种非常适合处理连通性问题的算法。通过递归地访问相邻元素，可以有效地遍历整个连通区域。在处理二维矩阵时，DFS 可以很好地处理连通块的遍历，并且通过方向数组可以简化代码。
+    \item[复杂度分析] 代码的时间复杂度为 O(n * m)，其中 n 和 m 分别是矩阵的行数和列数。这是因为代码需要遍历矩阵中的每个元素，并对每个元素进行常数时间的操作。间复杂度为 O(n * m)，主要是 visited 数组的空间开销。
+\end{description}
+
+\subsection{队列中的最大值}
+\subsubsection{问题描述}
+{\songti 
+给定一个队列，有下列3个基本操作：\\
+（1）Enqueue(v): v 入队\\
+（2）Dequeue(): 使队首元素删除，并返回此元素\\
+（3）GetMax(): 返回队列中的最大元素\\
+请设计一种数据结构和算法，让GetMax操作的时间复杂度尽可能地低。\\
+要求运行时间不超过一秒}
+\subsubsection{基本要求}
+\begin{description}
+    \item[输入] 
+    \begin{itemize}
+        \item 第1行1个正整数n, 表示队列的容量(队列中最多有n个元素)\\
+接着读入多行，每一行执行一个动作。\\
+若输入"dequeue"，表示出队，当队空时，输出一行“Queue is Empty”;否则，输出出队的元素；\\
+若输入"enqueue m"，表示将元素m入队,当队满时(入队前队列中元素已有n个)，输出"Queue is Full"，否则，不输出；\\
+若输入"max",输出队列中最大元素，若队空，输出一行“Queue is Empty”。\\
+若输入"quit",结束输入，输出队列中的所有元素\\
+        \item 对于20\%的数据，有0<=n<=100，|max(m) - min(m)|<=1e4；\\
+对于40\%的数据，有0<=n<=6000，|max(m) - min(m)|<=1e6；（未优化O(nm)程序运行时间略微超过一秒）\\
+对于100\%的数据，有0<=n<=10000,|max(m) - min(m)|<=1e8；\\
+对于每个测试点，0x80000000 <= min(m) < max(m) <= 0x7fffffff\\
+对于每个测试点，操作的个数约为队列大小的10倍左右\\
+事实上，测试数据保证对于后80\%左右的操作，队列内空位不会超过15\% \\
+    \end{itemize}
+    \item[输出] 多行，分别是执行每次操作后的结果
+\end{description}
+\subsubsection{数据结构设计}
+{\songti 使用了两个队列，一个是stl容器作为单调队列用来维护最大值，虽说不允许使用stl容器，但是可以发现第二个队列就是手写的静态队列，可以用与之一模一样的方法完成，所以证明我掌握了手写队列的方法，而此处用stl只是因为比较方便；第二个手写队列证明了会使用静态队列，此队列用于维护元素的考察范围。}
+\begin{tcblisting}{listing engine=minted,boxrule=0.1mm,
+colback=blue!5!white,colframe=blue!75!black,
+listing only,left=5mm,enhanced,sharp corners=all,
+overlay={\begin{tcbclipinterior}\fill[red!20!blue!20!white] (frame.south west)
+rectangle ([xshift=5mm]frame.north west);\end{tcbclipinterior}},
+minted language=c++,
+minted style=tango,
+minted options={fontsize=\small,breaklines,autogobble,linenos,numbersep=3mm}}
+const int N = 100010;
+deque<int> q;
+int a[N];
+int head = 0, tail = 0;
+\end{tcblisting}
+\subsubsection{功能函数}
+\begin{tcblisting}{listing engine=minted,boxrule=0.1mm,
+colback=blue!5!white,colframe=blue!75!black,
+listing only,left=5mm,enhanced,sharp corners=all,
+overlay={\begin{tcbclipinterior}\fill[red!20!blue!20!white] (frame.south west)
+rectangle ([xshift=5mm]frame.north west);\end{tcbclipinterior}},
+minted language=c++,
+minted style=tango,
+minted options={fontsize=\small,breaklines,autogobble,linenos,numbersep=3mm}}
+void enqueue(int value, int n) { //模拟enqueue操作
+    if (tail - head >= n) { //若队列容量>=n则输出队列已满
+        printf("Queue is Full\n");
+        return;
+    }
+    a[tail] = value; //队列未满则入队a
+    while (!q.empty() && a[q.back()] < value) {
+        q.pop_back(); //弹出q队列中所有小于value的队尾以保持单调
+    }
+    q.push_back(tail);
+    tail++;
+}
+void dequeue() { //模拟dequeue操作
+    if (head == tail) { //队列空则输出
+        printf("Queue is Empty\n");
+        return;
+    }  //以下为本题关键
+    if (q.front() == head) { //若q队列队首同时也是a队列队首，则a队列删除队首元素时，q队列的队首，即最大值就不在考察范围内了，所以同时要弹出q队列的队首；若非，q队列还保持队首为最大值
+        q.pop_front();
+    }
+    printf("%d\n", a[head]);
+    head++;
+}
+void get_max() { //模拟max操作
+    if (head == tail) {
+        printf("Queue is Empty\n");
+        return;
+    }
+    printf("%d\n", a[q.front()]); //一直维护的单调队列，所以最大值即为q队列队首
+}
+\end{tcblisting}
+\subsubsection{调试分析}
+\begin{itemize}
+    \item 一开始没注意到有操作数大致为n的10倍这句话，所以一开始全局开的a[N]的N开到了和n一样的数量级会导致数组越界，发现之后扩大N为100010就没问题了。
+    \item 为了缩短时间，把cin,cout全换成了scanf和printf来提升效率
+\end{itemize}
+\subsubsection{总结与体会}
+\begin{description}
+    \item[单调队列] 本题是经典的双端队列中用单调队列来维护最大值的题，通过维护队列的单调性，永远保证从队首到队尾元素大小是单调的，可以在 O(1) 时间内获取队列中的最大值。
+    \item[复杂度分析] 入队操作的时间复杂度为 O(1)，因为双端队列的插入和删除操作都是 O(1) 的。出队操作的时间复杂度为 O(1)，因为只需要更新指针和双端队列的头部元素。获取最大值操作的时间复杂度为 O(1)，因为只需要访问双端队列的头部元素。空间复杂度为 O(n)，主要是数组和双端队列的空间开销。
+\end{description}
+
+\section{实验总结}
+\subsection{对栈的体会}
+\subsubsection{后进先出（LIFO）特性}
+{\songti 栈的本质是后进先出（LIFO）的数据结构，适用于需要逆序处理数据的场景。在火车进站问题中，栈被用来模拟火车的进出站过程，通过栈的特性可以方便地实现火车的逆序出站。}
+\subsubsection{表达式求值问题}
+{\songti 栈在表达式求值中非常有用，特别是在处理括号匹配和操作符优先级时。布尔表达式求值问题中，栈被用来存储操作符和操作数，通过栈的特性可以正确地处理表达式的计算顺序。}
+\subsubsection{递归与回溯}
+{\songti 栈在递归算法中扮演重要角色，递归调用本质上就是栈的压栈和出栈操作。在连通域判断问题中，栈被用来实现深度优先搜索（DFS），通过栈的特性可以方便地实现递归调用。}
+\subsection{对队的体会}
+\subsubsection{先进先出（FIFO）特性}
+{\songti 队列的本质是先进先出（FIFO）的数据结构，适用于需要顺序处理数据的场景。在队列的应用问题中，队列被用来存储待处理的元素，通过队列的特性可以方便地实现顺序处理。}
+\subsubsection{广度优先搜索（BFS）}
+{\songti 队列在广度优先搜索（BFS）中非常有用，BFS 通过队列的特性可以逐层遍历图或树。虽然连通域判断问题中使用的是 DFS，但 BFS 也可以用来解决类似问题，队列在 BFS 中起到关键作用。}
+\subsubsection{最大值维护}
+{\songti 队列在维护最大值问题中非常有用，特别是在滑动窗口问题中。在队列的最大值问题中，双端队列被用来维护当前队列中的最大值，通过队列的特性可以高效地获取最大值。}
+\subsection{总结}
+{\songti 通过对这五道题目的分析和实现，可以深刻体会到栈和队列在算法和数据结构中的重要性和应用场景。栈和队列是两种基本的数据结构，选择合适的数据结构可以大大简化问题的解决过程，提高代码的可读性和性能。通过栈和队列，可以高效地实现各种算法，特别是在处理递归、回溯、表达式求值、连通性问题和最大值维护等问题时。}
+
+\end{document}
